@@ -3,59 +3,60 @@ import re
 from DB import insert_data
 from chatbot import ask, save_info
 
-# Pattern to detect evaluation start
+# Patterns
 que_ans_flag_pattern = "Evaluation is now starting."
-
-# Pattern to detect conversation end
 end_patterns = ["exit", "quit", "stop", "goodbye"]
 
-# Initialize session state for chat and flags
-if "greeted" not in st.session_state:
-    st.session_state.greeted = False
-if "que_ans_start" not in st.session_state:
-    st.session_state.que_ans_start = False
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "candidate_data" not in st.session_state:
-    st.session_state.candidate_data = {"Evaluation Questions": []}
-if "conversation_ended" not in st.session_state:
-    st.session_state.conversation_ended = False
+# --- UNIQUE SESSION KEYS (isolated per user) ---
+if "session" not in st.session_state:
+    st.session_state.session = {
+        "greeted": False,
+        "que_ans_start": False,
+        "chat_history": [],
+        "candidate_data": {"Evaluation Questions": []},
+        "conversation_ended": False,
+    }
 
+state = st.session_state.session  # shorthand
+
+# --- UI ---
 st.title("💬 AI Interview Chatbot")
 
 # Display chat messages in bubbles
-for chat in st.session_state.chat_history:
+for chat in state["chat_history"]:
     with st.chat_message(chat["role"]):
         st.markdown(chat["content"])
 
 # Handle first greeting
-if not st.session_state.greeted:
+if not state["greeted"]:
     reply = ask("")
-    st.session_state.chat_history.append({"role": "assistant", "content": reply})
-    st.session_state.greeted = True
+    state["chat_history"].append({"role": "assistant", "content": reply})
+    state["greeted"] = True
     st.rerun()
 
 # Input box for user
 if user_input := st.chat_input("Type your message..."):
     # Save user input
-    save_info({"user": user_input}, st.session_state.candidate_data, st.session_state.que_ans_start)
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
+    save_info({"user": user_input}, state["candidate_data"], state["que_ans_start"])
+    state["chat_history"].append({"role": "user", "content": user_input})
 
     # Get assistant reply
     reply = ask(user_input)
 
     # Check if evaluation started
     if re.search(que_ans_flag_pattern, reply):
-        st.session_state.que_ans_start = True
+        state["que_ans_start"] = True
 
-    save_info({"assistant": reply}, st.session_state.candidate_data, st.session_state.que_ans_start)
-    st.session_state.chat_history.append({"role": "assistant", "content": reply})
-    
-    # Detect if user ended conversation
-    if any(word in user_input.lower() for word in end_patterns) or any(word in reply.lower() for word in ["thanks, thank, thankyou"]):
-        # Insert candidate data into DB
-        insert_data(st.session_state.candidate_data)
-        st.session_state.conversation_ended = True
+    save_info({"assistant": reply}, state["candidate_data"], state["que_ans_start"])
+    state["chat_history"].append({"role": "assistant", "content": reply})
+
+    # Detect if conversation ended
+    if (
+        any(word in user_input.lower() for word in end_patterns)
+        or any(word in reply.lower() for word in ["thanks", "thank", "thankyou"])
+    ):
+        insert_data(state["candidate_data"])
+        state["conversation_ended"] = True
         st.success("✅ Candidate data saved successfully!")
-        
+
     st.rerun()
