@@ -1,125 +1,56 @@
-import os
-from dotenv import load_dotenv
-from huggingface_hub import InferenceClient
+import streamlit as st
+import re
+from chatbot import ask, messages, save_info
 
-# Load .env file
-load_dotenv()
+# Candidate data storage
+candidate_data = {"Evaluation Questions": []}
 
-# Get token from environment
-hf_token = os.getenv("HF_TOKEN")
+# Pattern to detect evaluation start
+que_ans_flag_pattern = "Evaluation is now starting."
 
-# Choose LLaMA model (example: LLaMA-2 7B chat version)
-client = InferenceClient(
-    "meta-llama/Llama-4-Scout-17B-16E-Instruct",
-    token=hf_token
-)
+# Initialize session state for chat and flags
+if "greeted" not in st.session_state:
+    st.session_state.greeted = False
+if "que_ans_start" not in st.session_state:
+    st.session_state.que_ans_start = False
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "candidate_data" not in st.session_state:
+    st.session_state.candidate_data = {"Evaluation Questions": []}
 
-prompt = """You are a Candidate Screening Chatbot designed to assist in collecting candidate information and assessing their technical skills. Follow the rules and capabilities below:
+st.title("💬 AI Interview Chatbot")
 
-        Capabilities & Rules:
+# 🔹 Trigger first greeting once at app start
+if not st.session_state.greeted:
+    reply = ask("")  # first greeting from bot
+    st.session_state.chat_history.append({"role": "assistant", "content": reply})
+    st.session_state.greeted = True
 
-        Greeting
+# Display chat messages
+for chat in st.session_state.chat_history:
+    if chat["role"] == "user":
+        st.markdown(f"**You:** {chat['content']}")
+    else:
+        st.markdown(f"**Assistant:** {chat['content']}")
 
-        Greet the candidate politely when the conversation begins.
+# Chat input box
+user_input = st.chat_input("Type your message...")
 
-        Provide a short overview:
-        “I am here to collect some basic details and ask technical questions based on your skills to help evaluate your profile.”
-
-        If the candidate says a conversation-ending keyword (e.g., exit, quit, stop, goodbye), gracefully end with a thank-you message and stop.
-
-        Information Gathering
-        Collect the following details step by step:
-
-        Full Name
-
-        Email Address
-
-        Phone Number
-
-        Years of Experience
-
-        Desired Position(s)
-
-        Current Location
-
-        Tech Stack (skills, programming languages, frameworks, databases, tools) 
-
-        Tech Stack Declaration
-
-        Ask the candidate to clearly list their tech stack.
-
-        Example: “Please specify the programming languages, frameworks, databases, and tools you are proficient in.” 
-        You can also provide some options based on their desired positions.
-
-        Technical Question Generation
-
-        Based on the declared tech stack, generate 3-5 technical questions for each key technology. Ask the question one by one for each tech stack.
-
-        Questions should be clear, relevant, and progressively challenging.
-        Ask only 1 que at a time. And don't ask anything else when asking a question.
-        If you ask a coding implementation question then keep the coding question limited to max 2-3 lines of code.
-        And ask progressively harder questions along with new types of questions everytime.
-        Example: If the candidate lists Python and Django:
-
-        Ask some Python programming questions (e.g., about data structures, OOP, performance).
-
-        Ask Django framework questions (e.g., ORM, middleware, request lifecycle).
-
-        Context Handling
-
-        Remember candidate inputs during the session.
-
-        If the candidate refers back to something (e.g., “my experience is 5 years” → later says “Update it to 6 years”), update accordingly.
-
-        Maintain smooth, logical conversation flow.
-
-        Fallback Mechanism
-
-        If you don't understand an input, respond politely and ask for clarification.
-
-        Example: “I didn't quite catch that. Could you please rephrase or provide the information again?”
-
-        Always bring the conversation back to the purpose (candidate details and tech evaluation).
-
-        End Conversation
-
-        Conclude with a message like:
-        “Thank you for your time, [Candidate Name]. Your information has been recorded. Our team will review your details and get back to you soon. Have a great day!”
-
-        Ensure you stop after ending.
-        FINAL AND MOST IMPORTANT: IF THE USER ASKS ANYTHING THAT CUTS THE FLOW OF CHAT ANSWER THE CANDIDATE POLITELY AND APPROPRIATELY AND ASK IF THEIR QUERY IS RESOLVED.
-        IF THEY SAY YES OR AGREE THEN PROCEED WITH THE FLOW OF CONVERSATION I.E THE ABOVE INSTRUCTIONS. AND KEEP THE RESPONSES BELOW 300 TOKENS ESPECIALLY DON'T GO EXPLAINING THE ANSWERS TO THE CANDIDATE.
-        AND DON'T START A FRESH EVALUATION FOR THE CANDIDATE ONCE IT IS RECORDED. 
-        """
-        
-    
-
-# Conversation history
-messages = [
-    {"role": "system", "content": prompt}
-]
-
-def ask(user_input=messages):
-    global messages
-    # Add user message
-    messages.append({"role": "user", "content": user_input})
-
-    # Call the model with the full history
-    response = client.chat_completion(messages=messages, max_tokens=300)
+if user_input:
+    print(st.session_state.candidate_data)
+    # Save user input
+    save_info({"user": user_input}, st.session_state.candidate_data, st.session_state.que_ans_start)
+    st.session_state.chat_history.append({"role": "user", "content": user_input})
 
     # Get assistant reply
-    reply = response.choices[0].message["content"]
+    reply = ask(user_input)
 
-    # Add assistant reply to history
-    messages.append({"role": "assistant", "content": reply})
+    # Check if evaluation started
+    if re.search(que_ans_flag_pattern, reply):
+        st.session_state.que_ans_start = True
 
-    return reply
+    save_info({"assistant": reply}, st.session_state.candidate_data, st.session_state.que_ans_start)
+    st.session_state.chat_history.append({"role": "assistant", "content": reply})
 
-greeted = False
-while True:
-    if greeted:
-        user_input = input("User: ")
-        print("Assistant:", ask(user_input))
-    else:
-        print("Assistant:", ask(""))
-        greeted = True
+    st.rerun()
+
