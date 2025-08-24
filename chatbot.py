@@ -9,12 +9,13 @@ load_dotenv()
 # Get token from environment
 hf_token = os.getenv("HF_TOKEN")
 
-# Choose LLaMA model (example: LLaMA-2 7B chat version)
+# Chose LLaMA model
 client = InferenceClient(
     "meta-llama/Llama-4-Scout-17B-16E-Instruct",
     token=hf_token
 )
 
+# Prompt to guide the chatbot's behaviour
 prompt = """You are a Candidate Screening Chatbot designed to assist in collecting candidate information and assessing their technical skills. Follow the rules and capabilities below:
 
         Capabilities & Rules:
@@ -153,14 +154,3 @@ def save_info(content, candidate_info, que_ans_start):
                 candidate_info["Location"] = re.findall(location, content["assistant"])[0]
             elif re.search(tech_stack, content["assistant"]):
                 candidate_info["Tech Stack"] = re.findall(tech_stack, content["assistant"])
-    
-    # print(re.findall(pattern=que_ans_flag, string=content))
-    # print(re.findall(pattern=tech_stack, string=content, flags=re.DOTALL))
-    
-# save_info("""I've noted that your tech stack includes:
-
-#                 * Programming language: Python
-#                 * Deep learning frameworks: TensorFlow (TF), PyTorch, Keras
-#                 * Machine learning library: Scikit-learn""")
-
-# save_info("I would like to inform you that our conversation regarding t   he questions and answers will be recorded for evaluation purposes.")

@@ -1,12 +1,13 @@
 import streamlit as st
 import re
-from chatbot import ask, messages, save_info
-
-# Candidate data storage
-candidate_data = {"Evaluation Questions": []}
+from DB import insert_data
+from chatbot import ask, save_info
 
 # Pattern to detect evaluation start
 que_ans_flag_pattern = "Evaluation is now starting."
+
+# Pattern to detect conversation end
+end_patterns = ["exit", "quit", "stop", "goodbye"]
 
 # Initialize session state for chat and flags
 if "greeted" not in st.session_state:
@@ -17,27 +18,25 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "candidate_data" not in st.session_state:
     st.session_state.candidate_data = {"Evaluation Questions": []}
+if "conversation_ended" not in st.session_state:
+    st.session_state.conversation_ended = False
 
 st.title("💬 AI Interview Chatbot")
 
-# 🔹 Trigger first greeting once at app start
+# Display chat messages in bubbles
+for chat in st.session_state.chat_history:
+    with st.chat_message(chat["role"]):
+        st.markdown(chat["content"])
+
+# Handle first greeting
 if not st.session_state.greeted:
-    reply = ask("")  # first greeting from bot
+    reply = ask("")
     st.session_state.chat_history.append({"role": "assistant", "content": reply})
     st.session_state.greeted = True
+    st.rerun()
 
-# Display chat messages
-for chat in st.session_state.chat_history:
-    if chat["role"] == "user":
-        st.markdown(f"**You:** {chat['content']}")
-    else:
-        st.markdown(f"**Assistant:** {chat['content']}")
-
-# Chat input box
-user_input = st.chat_input("Type your message...")
-
-if user_input:
-    print(st.session_state.candidate_data)
+# Input box for user
+if user_input := st.chat_input("Type your message..."):
     # Save user input
     save_info({"user": user_input}, st.session_state.candidate_data, st.session_state.que_ans_start)
     st.session_state.chat_history.append({"role": "user", "content": user_input})
@@ -51,6 +50,12 @@ if user_input:
 
     save_info({"assistant": reply}, st.session_state.candidate_data, st.session_state.que_ans_start)
     st.session_state.chat_history.append({"role": "assistant", "content": reply})
-
+    
+    # Detect if user ended conversation
+    if any(word in user_input.lower() for word in end_patterns) or any(word in reply.lower() for word in ["thanks, thank, thankyou"]):
+        # Insert candidate data into DB
+        insert_data(st.session_state.candidate_data)
+        st.session_state.conversation_ended = True
+        st.success("✅ Candidate data saved successfully!")
+        
     st.rerun()
-

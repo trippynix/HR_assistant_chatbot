@@ -1,0 +1,6 @@
+torch
+"transformers[torch]"
+huggingface_hub
+python-dotenv
+"pymongo[srv]"
+streamlit
