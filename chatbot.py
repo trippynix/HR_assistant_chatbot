@@ -99,28 +99,22 @@ prompt = """You are a Candidate Screening Chatbot designed to assist in collecti
         AND DON'T START A FRESH EVALUATION FOR THE CANDIDATE ONCE IT IS RECORDED. 
         """
         
-    
 
-# Conversation history
-messages = [
-    {"role": "system", "content": prompt}
-]
-
-def ask(user_input):
-    global messages
+def ask(user_input, messages):
     # Add user message
     messages.append({"role": "user", "content": user_input})
 
     # Call the model with the full history
     response = client.chat_completion(messages=messages, max_tokens=300)
-
+    
     # Get assistant reply
     reply = response.choices[0].message["content"]
 
     # Add assistant reply to history
     messages.append({"role": "assistant", "content": reply})
-
+    
     return reply
+
 
 def save_info(content, candidate_info, que_ans_start):
     # regex for pattern matching

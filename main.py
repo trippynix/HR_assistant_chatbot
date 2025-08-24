@@ -1,62 +1,65 @@
 import streamlit as st
-import re
+import re, uuid
 from DB import insert_data
-from chatbot import ask, save_info
+from chatbot import ask, save_info, prompt
 
-# Patterns
+# Pattern to detect evaluation start
 que_ans_flag_pattern = "Evaluation is now starting."
 end_patterns = ["exit", "quit", "stop", "goodbye"]
 
-# --- UNIQUE SESSION KEYS (isolated per user) ---
-if "session" not in st.session_state:
-    st.session_state.session = {
+# Assign unique session_id
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+st.sidebar.write(f"Session ID: {st.session_state.session_id}")
+
+# Initialize user-specific state
+if "user_sessions" not in st.session_state:
+    st.session_state.user_sessions = {}
+
+if st.session_state.session_id not in st.session_state.user_sessions:
+    st.session_state.user_sessions[st.session_state.session_id] = {
         "greeted": False,
         "que_ans_start": False,
         "chat_history": [],
         "candidate_data": {"Evaluation Questions": []},
         "conversation_ended": False,
+        "messages": [ {"role": "system", "content": prompt} ]  # 👈 isolate history per user
     }
 
-state = st.session_state.session  # shorthand
+user_state = st.session_state.user_sessions[st.session_state.session_id]
 
-# --- UI ---
 st.title("💬 AI Interview Chatbot")
 
-# Display chat messages in bubbles
-for chat in state["chat_history"]:
+# Display chat messages
+for chat in user_state["chat_history"]:
     with st.chat_message(chat["role"]):
         st.markdown(chat["content"])
 
-# Handle first greeting
-if not state["greeted"]:
-    reply = ask("")
-    state["chat_history"].append({"role": "assistant", "content": reply})
-    state["greeted"] = True
+# Greeting
+if not user_state["greeted"]:
+    reply = ask("", user_state["messages"])
+    user_state["chat_history"].append({"role": "assistant", "content": reply})
+    user_state["greeted"] = True
     st.rerun()
 
-# Input box for user
+# Chat input
 if user_input := st.chat_input("Type your message..."):
-    # Save user input
-    save_info({"user": user_input}, state["candidate_data"], state["que_ans_start"])
-    state["chat_history"].append({"role": "user", "content": user_input})
+    save_info({"user": user_input}, user_state["candidate_data"], user_state["que_ans_start"])
+    user_state["chat_history"].append({"role": "user", "content": user_input})
 
-    # Get assistant reply
-    reply = ask(user_input)
+    reply = ask(user_input, user_state["messages"])   # 👈 pass per-user messages
 
-    # Check if evaluation started
     if re.search(que_ans_flag_pattern, reply):
-        state["que_ans_start"] = True
+        user_state["que_ans_start"] = True
 
-    save_info({"assistant": reply}, state["candidate_data"], state["que_ans_start"])
-    state["chat_history"].append({"role": "assistant", "content": reply})
+    save_info({"assistant": reply}, user_state["candidate_data"], user_state["que_ans_start"])
+    user_state["chat_history"].append({"role": "assistant", "content": reply})
 
-    # Detect if conversation ended
-    if (
-        any(word in user_input.lower() for word in end_patterns)
-        or any(word in reply.lower() for word in ["thanks", "thank", "thankyou"])
+    if any(word in user_input.lower() for word in end_patterns) or any(
+        word in reply.lower() for word in ["thanks", "thank", "thankyou"]
     ):
-        insert_data(state["candidate_data"])
-        state["conversation_ended"] = True
+        insert_data(user_state["candidate_data"])
+        user_state["conversation_ended"] = True
         st.success("✅ Candidate data saved successfully!")
 
     st.rerun()
