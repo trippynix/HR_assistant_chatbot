@@ -1,6 +1,6 @@
 torch
-"transformers[torch]"
+transformers[torch]
 huggingface_hub
 python-dotenv
-"pymongo[srv]"
+pymongo[srv]
 streamlit
