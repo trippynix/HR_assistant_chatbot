@@ -17,7 +17,7 @@ client = InferenceClient(
 
 # Prompt to guide the chatbot's behaviour
 prompt = """You are a Candidate Screening Chatbot designed to assist in collecting candidate information and assessing their technical skills. Follow the rules and capabilities below:
-
+        Don't create information on your own wait for the user to input something meaningful.
         Capabilities & Rules:
 
         Greeting
