@@ -50,12 +50,13 @@ streamlit run main.py
 
 ## Usage Guide
 
-### 1. Open the Streamlit app in your browser (http://localhost:8501).
-### 2. Start chatting with the Hiring Assistant.
+1. Open the Streamlit app in your browser (http://localhost:8501).
 
-### 3. Candidate data will be stored automatically in MongoDB.
+2. Start chatting with the Hiring Assistant.
 
-### 4. Multiple users can interact simultaneously thanks to session state handling.
+3. Candidate data will be stored automatically in MongoDB.
+
+4. Multiple users can interact simultaneously thanks to session state handling.
 
 ---
 
@@ -96,14 +97,17 @@ The prompts were carefully designed to:
 
 ## Challenges & Solutions
 
-- *Challenge*: Handling multiple users in real-time.
-  *Solution*: Implemented Streamlit session_state to isolate each conversation.
+- **Challenge**: Handling multiple users in real-time.
 
-- *Challenge*: Large model dependencies causing memory errors.
-  *Solution*: Used lightweight HuggingFace models.
+  **Solution**: Implemented Streamlit session_state to isolate each conversation.
 
-- *Challenge*: Ensuring clean database writes.
-  *Solution*: Centralized MongoDB insert logic in db.py.
+- **Challenge**: Large model dependencies causing memory errors.
+
+  **Solution**: Used lightweight HuggingFace models.
+
+- **Challenge**: Ensuring clean database writes.
+
+  **Solution**: Centralized MongoDB insert logic in db.py.
 
 ---
 
