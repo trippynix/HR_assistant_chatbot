@@ -19,23 +19,23 @@ Key Features:
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/your-username/hiring-assistant-chatbot.git
-cd hiring-assistant-chatbot
+cd hiring-assistant-chatbot```
 
 ### 2. Create and Activate Virtual Environment
 ```bash
 python3 -m venv venv
 source venv/bin/activate # On Mac/Linux
-venv\Scripts\activate    # On Windows
+venv\Scripts\activate    # On Windows```
 
 ### 3. Install Dependencies
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt```
 
 ### 4. Configure Environment Variables
 Create a .env file in the project root:
 ```bash
 MONGO_URI=your_mongodb_connection_string
-HF_TOKEN=your_huggingface_token  # if using HuggingFace models
+HF_TOKEN=your_huggingface_token  # if using HuggingFace models```
 
 ### 5. Run the Application
 ```bash
