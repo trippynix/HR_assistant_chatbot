@@ -55,11 +55,19 @@ if user_input := st.chat_input("Type your message..."):
     save_info({"assistant": reply}, user_state["candidate_data"], user_state["que_ans_start"])
     user_state["chat_history"].append({"role": "assistant", "content": reply})
 
-    if any(word in user_input.lower() for word in end_patterns) or any(
-        word in reply.lower() for word in ["thanks", "thank", "thankyou"]
+    if (
+        not user_state["conversation_ended"]  # 👈 only insert once
+        and (
+            any(word in user_input.lower() for word in end_patterns)
+            or any(word in reply.lower() for word in ["thanks", "thank", "thankyou"])
+        )
     ):
         insert_data(user_state["candidate_data"])
         user_state["conversation_ended"] = True
-        st.success("✅ Candidate data saved successfully!")
+        st.success("✅ Candidate data saved successfully!") 
 
     st.rerun()
+
+
+    """ The program runs into a problem when the bot says thank you twice
+    """

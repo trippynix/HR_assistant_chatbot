@@ -1,5 +1,5 @@
-torch
-transformers[torch]
+torch --index-url https://download.pytorch.org/whl/cpu
+transformers
 huggingface_hub
 python-dotenv
 pymongo[srv]

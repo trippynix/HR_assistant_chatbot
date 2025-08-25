@@ -3,5 +3,5 @@ __pycache__/
 venv3.11/
 .env
 *.log
-.env
+how.txt
 *.pem
