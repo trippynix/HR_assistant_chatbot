@@ -10,7 +10,7 @@ Key Features:
 - Stores candidate information in MongoDB.
 - Asks both personal and technical questions.
 - Session-state handling to manage multiple users.
-- Built with **Streamlit**, **LangChain/Transformers**, and **PyTorch**.
+- Built with **Streamlit**, **Transformers**, and **PyTorch**.
 
 ---
 
